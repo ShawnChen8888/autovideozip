@@ -1,0 +1,7 @@
+01.自动批量压缩视频/
+main.py
+uploads/
+outputs/
+*.pyc
+__pycache__
+.git
