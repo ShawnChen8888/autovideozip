@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>视频/音频极致压缩工具</title>
+    <style>
+        :root {
+            --apple-green: #30D158;
+            --apple-green-dark: #28b34a;
+            --apple-bg: #f5f5f7;
+            --apple-card: #fff;
+            --apple-shadow: 0 4px 24px #30d15822;
+            --apple-radius: 18px;
+            --apple-font: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+        }
+        body {
+            font-family: var(--apple-font);
+            background: var(--apple-bg);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: var(--apple-card);
+            max-width: 520px;
+            width: 100%;
+            margin: 40px auto;
+            padding: 40px 32px 32px 32px;
+            border-radius: var(--apple-radius);
+            box-shadow: var(--apple-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h2 {
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.6rem;
+            margin-bottom: 32px;
+            color: #222;
+            letter-spacing: 1px;
+        }
+        .drop-area {
+            width: 100%;
+            border: 2px dashed var(--apple-green);
+            border-radius: 14px;
+            background: #eafff2;
+            color: var(--apple-green-dark);
+            text-align: center;
+            padding: 32px 0 24px 0;
+            margin-bottom: 18px;
+            font-size: 1.1rem;
+            transition: background 0.2s, border 0.2s;
+            cursor: pointer;
+        }
+        .drop-area.dragover {
+            background: #d2f8e3;
+            border-color: var(--apple-green-dark);
+        }
+        input[type=file] {
+            display: none;
+        }
+        .file-list {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .file-card {
+            background: #f8fff9;
+            border-radius: 12px;
+            box-shadow: 0 1px 6px #30d15811;
+            padding: 18px 16px 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .file-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+        }
+        .file-name {
+            font-weight: 600;
+            color: #222;
+            word-break: break-all;
+            flex: 1;
+        }
+        .file-size {
+            color: #888;
+            font-size: 0.98em;
+            margin-left: 8px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0fbe7;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 6px 0 2px 0;
+        }
+        .progress-inner {
+            height: 100%;
+            background: linear-gradient(90deg, var(--apple-green), var(--apple-green-dark));
+            border-radius: 6px;
+            transition: width 0.2s;
+        }
+        .status {
+            font-size: 0.98em;
+            color: var(--apple-green-dark);
+            margin-right: 8px;
+        }
+        .error {
+            color: #d32f2f;
+            font-size: 0.98em;
+            margin-top: 4px;
+        }
+        .download-link {
+            color: var(--apple-green);
+            text-decoration: none;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 18px 2vw 12px 2vw; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>视频/音频极致压缩工具</h2>
+    <div style="width:100%;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:1rem;cursor:pointer;">
+            <input type="checkbox" id="autoSaveToggle" style="accent-color:#30D158;"> 自动保存到本地
+        </label>
+        <button id="chooseDirBtn" style="display:none;padding:6px 14px;font-size:0.98rem;background:#eafff2;color:#30D158;border:1.5px solid #30D158;border-radius:8px;cursor:pointer;">选择保存目录</button>
+        <span id="dirStatus" style="font-size:0.95em;color:#30D158;"></span>
+    </div>
+    <div class="drop-area" id="dropArea">拖拽或点击选择多个视频/音频文件</div>
+    <input type="file" id="fileInput" accept="video/*,audio/*" multiple>
+    <div class="file-list" id="fileList"></div>
+</div>
+<script>
+const dropArea = document.getElementById('dropArea');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const autoSaveToggle = document.getElementById('autoSaveToggle');
+const chooseDirBtn = document.getElementById('chooseDirBtn');
+const dirStatus = document.getElementById('dirStatus');
+let autoSave = false;
+let saveDirHandle = null;
+
+function formatSize(size) {
+    if (size < 1024) return size + ' B';
+    if (size < 1024*1024) return (size/1024).toFixed(1) + ' KB';
+    if (size < 1024*1024*1024) return (size/1024/1024).toFixed(1) + ' MB';
+    return (size/1024/1024/1024).toFixed(1) + ' GB';
+}
+
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+let tasks = [];
+
+function renderList() {
+    fileList.innerHTML = '';
+    tasks.forEach((task, idx) => {
+        const card = document.createElement('div');
+        card.className = 'file-card';
+        card.innerHTML = `
+            <div class="file-row">
+                <span class="file-name">${task.file.name}</span>
+                <span class="file-size">${formatSize(task.file.size)}</span>
+            </div>
+            <div class="progress-bar"><div class="progress-inner" style="width:${task.progress}%"></div></div>
+            <div class="file-row">
+                <span class="status">${task.status}</span>
+                ${task.downloads ? task.downloads : ''}
+            </div>
+            <div class="file-row">
+                <span style="color:#30D158;font-weight:600;">${Math.round(task.progress)}%</span>
+            </div>
+            ${task.error ? `<div class="error">${task.error}</div>` : ''}
+            <div class="file-row">
+                <span>压缩前: ${formatSize(task.file.size)}</span>
+                <span>压缩后: ${task.compressedSize ? formatSize(task.compressedSize) : '--'}</span>
+            </div>
+        `;
+        fileList.appendChild(card);
+    });
+}
+
+async function autoSaveFileToDir(url, filename) {
+    if (!saveDirHandle) return false;
+    try {
+        const fileHandle = await saveDirHandle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        await writable.write(blob);
+        await writable.close();
+        console.log('自动保存成功:', filename);
+        showToast('已自动保存到本地: ' + filename, true);
+        return true;
+    } catch (e) {
+        console.error('自动保存失败:', e);
+        showToast('自动保存失败: ' + filename, false);
+        return false;
+    }
+}
+function showToast(msg, success) {
+    let toast = document.getElementById('toastMsg');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastMsg';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '40px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = success ? '#30D158' : '#d32f2f';
+        toast.style.color = '#fff';
+        toast.style.padding = '12px 28px';
+        toast.style.borderRadius = '10px';
+        toast.style.fontSize = '1.08rem';
+        toast.style.zIndex = 9999;
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2600);
+}
+function triggerDownload(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 100);
+}
+
+function uploadFile(task) {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    const task_id = uuidv4();
+    task.task_id = task_id;
+    formData.append('file', task.file);
+    task.status = '上传中...';
+    task.progress = 0;
+    renderList();
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            task.progress = Math.round((e.loaded / e.total) * 50); // 上传占50%
+            renderList();
+        }
+    };
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                task.progress = 100;
+                task.status = '处理完成';
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    let downloads = '';
+                    if (data.video) downloads += `<a class='download-link' href='${data.video}' download>下载视频</a>`;
+                    if (data.audio) downloads += `<a class='download-link' href='${data.audio}' download>下载音频</a>`;
+                    task.downloads = downloads;
+                    task.compressedSize = data.size || null;
+                    // 自动保存逻辑
+                    if (autoSave) {
+                        if (data.video) {
+                            const fname = task.file.name.replace(/\.[^.]+$/, '_compressed.mp4');
+                            if (hasFSAccess && saveDirHandle) {
+                                autoSaveFileToDir(data.video, fname);
+                            } else {
+                                triggerDownload(data.video, fname);
+                            }
+                        }
+                        if (data.audio) {
+                            const fname = task.file.name.replace(/\.[^.]+$/, '.aac');
+                            if (hasFSAccess && saveDirHandle) {
+                                autoSaveFileToDir(data.audio, fname);
+                            } else {
+                                triggerDownload(data.audio, fname);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    task.error = '返回数据解析失败';
+                }
+            } else {
+                task.status = '失败';
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    task.error = data.detail || '上传失败';
+                } catch (e) {
+                    task.error = xhr.statusText || '上传失败';
+                }
+            }
+            renderList();
+            if (task._progressTimer) clearInterval(task._progressTimer);
+        }
+    };
+    xhr.onerror = function() {
+        task.status = '失败';
+        task.error = '网络错误';
+        renderList();
+        if (task._progressTimer) clearInterval(task._progressTimer);
+    };
+    xhr.open('POST', '/upload?task_id=' + encodeURIComponent(task_id));
+    xhr.send(formData);
+    // 处理阶段轮询进度+平滑推进
+    task.status = '处理中...';
+    let lastProgress = 50;
+    task._progressTimer = setInterval(() => {
+        fetch('/progress?task_id=' + encodeURIComponent(task_id)).then(r => r.json()).then(data => {
+            if (typeof data.progress === 'number') {
+                // 上传占50%，处理占50%，平滑推进
+                let backend = 50 + Math.round(data.progress/2);
+                if (backend > lastProgress) {
+                    lastProgress = backend;
+                } else {
+                    // 如果后端没变，前端每次+1，最多到99
+                    lastProgress = Math.min(lastProgress + 1, 99);
+                }
+                if (data.progress >= 100) {
+                    lastProgress = 100;
+                    clearInterval(task._progressTimer);
+                }
+                task.progress = lastProgress;
+                renderList();
+            }
+        });
+    }, 600);
+    renderList();
+}
+
+dropArea.onclick = () => fileInput.click();
+dropArea.ondragover = e => { e.preventDefault(); dropArea.classList.add('dragover'); };
+dropArea.ondragleave = e => { e.preventDefault(); dropArea.classList.remove('dragover'); };
+dropArea.ondrop = e => {
+    e.preventDefault();
+    dropArea.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+};
+fileInput.onchange = () => handleFiles(fileInput.files);
+
+function handleFiles(fileListObj) {
+    const files = Array.from(fileListObj);
+    files.forEach(file => {
+        const task = { file, progress: 0, status: '等待上传', error: '', downloads: '', compressedSize: null };
+        tasks.push(task);
+        renderList();
+        uploadFile(task);
+    });
+}
+
+// 检测 File System Access API 支持
+const hasFSAccess = 'showDirectoryPicker' in window;
+if (hasFSAccess) {
+    chooseDirBtn.style.display = '';
+    chooseDirBtn.onclick = async () => {
+        try {
+            saveDirHandle = await window.showDirectoryPicker();
+            dirStatus.textContent = '已选择目录';
+        } catch (e) {
+            dirStatus.textContent = '未选择目录';
+        }
+    };
+}
+autoSaveToggle.onchange = function() {
+    autoSave = autoSaveToggle.checked;
+    if (autoSave && hasFSAccess && !saveDirHandle) {
+        chooseDirBtn.click();
+    }
+};
+</script>
+</body>
+</html> 
