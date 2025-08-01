@@ -1,30 +1,14 @@
 {
-  "builds": [
-    {
-      "src": "api/main.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/main.py"
-    }
-  ],
   "functions": {
     "api/main.py": {
       "maxDuration": 300,
-      "memory": 1024,
-      "regions": ["sin1"]
+      "memory": 1024
     }
   },
   "build": {
     "env": {
       "PYTHONPATH": "$PYTHONPATH:."
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   },
   "headers": [
     {
@@ -35,7 +19,7 @@
           "value": "nosniff"
         },
         {
-          "key": "X-Frame-Options",
+          "key": "X-Frame-Options", 
           "value": "DENY"
         },
         {

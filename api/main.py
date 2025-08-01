@@ -27,9 +27,12 @@ processing_tasks = set()  # 跟踪正在处理的任务
 MAX_CONCURRENT_TASKS = 3  # 最大并发任务数
 FILE_SIZE_LIMIT = 50 * 1024 * 1024  # 50MB
 ALLOWED_ORIGINS = [
-    "https://yourdomain.vercel.app",  # 替换为你的实际域名
+    "https://autovideozip.vercel.app",
+    "https://autovideozip-git-*.vercel.app",  # Git 分支部署
+    "https://autovideozip-*.vercel.app",      # 预览部署
     "http://localhost:3000",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
 ]
 
 # Vercel 上的临时目录
@@ -71,23 +74,23 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 安全中间件
+# 安全中间件 - 暂时放宽限制以便测试部署
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["*.vercel.app", "localhost", "127.0.0.1"]
+    allowed_hosts=["*.vercel.app", "localhost", "127.0.0.1", "*"]
 )
 
-# CORS 中间件 - 生产环境限制
+# CORS 中间件 - 暂时允许所有来源以便测试 Vercel 部署
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],  # 部署成功后可以限制为特定域名
+    allow_credentials=False,  # 允许所有来源时必须设为 False
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 # 静态文件服务 - 指向根目录
-app.mount("/static", StaticFiles(directory="..", html=True), name="static")
+app.mount("/static", StaticFiles(directory=".", html=True), name="static")
 
 @app.get("/")
 def root():
@@ -129,12 +132,36 @@ def is_audio(filename: str) -> bool:
     return ext in SUPPORTED_AUDIO_TYPES
 
 async def compress_video_async(input_path: str, output_path: str, progress_path: Optional[str] = None):
-    # 在 Vercel 上，ffmpeg 路径可能不同
-    ffmpeg_cmd = "ffmpeg"
-    if os.path.exists("/usr/bin/ffmpeg"):
-        ffmpeg_cmd = "/usr/bin/ffmpeg"
-    elif os.path.exists("/opt/ffmpeg/bin/ffmpeg"):
-        ffmpeg_cmd = "/opt/ffmpeg/bin/ffmpeg"
+    # 检查 FFmpeg 是否可用
+    ffmpeg_paths = [
+        "ffmpeg",
+        "/usr/bin/ffmpeg", 
+        "/opt/ffmpeg/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg"
+    ]
+    
+    ffmpeg_cmd = None
+    for path in ffmpeg_paths:
+        try:
+            # 测试 FFmpeg 是否可用
+            process = await asyncio.create_subprocess_exec(
+                path, "-version",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await process.communicate()
+            if process.returncode == 0:
+                ffmpeg_cmd = path
+                break
+        except FileNotFoundError:
+            continue
+    
+    if not ffmpeg_cmd:
+        logger.error("FFmpeg 不可用")
+        raise HTTPException(
+            status_code=503, 
+            detail="视频处理服务暂时不可用，正在维护中"
+        )
     
     cmd = [
         ffmpeg_cmd, "-y", "-i", input_path,
@@ -164,16 +191,40 @@ async def compress_video_async(input_path: str, output_path: str, progress_path:
             process.terminate()
             await process.wait()
         raise subprocess.TimeoutExpired(cmd, 280)
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="视频处理服务不可用")
+    except Exception as e:
+        logger.error(f"视频处理异常: {e}")
+        raise HTTPException(status_code=500, detail="视频处理失败")
 
 async def compress_audio_async(input_path: str, output_path: str, progress_path: Optional[str] = None):
-    # 在 Vercel 上，ffmpeg 路径可能不同
-    ffmpeg_cmd = "ffmpeg"
-    if os.path.exists("/usr/bin/ffmpeg"):
-        ffmpeg_cmd = "/usr/bin/ffmpeg"
-    elif os.path.exists("/opt/ffmpeg/bin/ffmpeg"):
-        ffmpeg_cmd = "/opt/ffmpeg/bin/ffmpeg"
+    # 检查 FFmpeg 是否可用（与视频处理相同的逻辑）
+    ffmpeg_paths = [
+        "ffmpeg",
+        "/usr/bin/ffmpeg", 
+        "/opt/ffmpeg/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg"
+    ]
+    
+    ffmpeg_cmd = None
+    for path in ffmpeg_paths:
+        try:
+            process = await asyncio.create_subprocess_exec(
+                path, "-version",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await process.communicate()
+            if process.returncode == 0:
+                ffmpeg_cmd = path
+                break
+        except FileNotFoundError:
+            continue
+    
+    if not ffmpeg_cmd:
+        logger.error("FFmpeg 不可用")
+        raise HTTPException(
+            status_code=503, 
+            detail="音频处理服务暂时不可用，正在维护中"
+        )
         
     cmd = [
         ffmpeg_cmd, "-y", "-i", input_path,
@@ -201,8 +252,9 @@ async def compress_audio_async(input_path: str, output_path: str, progress_path:
             process.terminate()
             await process.wait()
         raise subprocess.TimeoutExpired(cmd, 280)
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="音频处理服务不可用")
+    except Exception as e:
+        logger.error(f"音频处理异常: {e}")
+        raise HTTPException(status_code=500, detail="音频处理失败")
 
 @app.post("/upload")
 async def upload_file(request: Request, file: UploadFile = File(...), task_id: str = Query(None)):
@@ -333,5 +385,40 @@ def health_check():
         "max_tasks": MAX_CONCURRENT_TASKS
     }
 
-# Vercel 需要的导出
-handler = app
+# FFmpeg 可用性检查端点
+@app.get("/ffmpeg-status")
+async def ffmpeg_status():
+    """检查 FFmpeg 是否可用"""
+    ffmpeg_paths = [
+        "ffmpeg",
+        "/usr/bin/ffmpeg", 
+        "/opt/ffmpeg/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg"
+    ]
+    
+    available_paths = []
+    for path in ffmpeg_paths:
+        try:
+            process = await asyncio.create_subprocess_exec(
+                path, "-version",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await process.communicate()
+            if process.returncode == 0:
+                version_info = stdout.decode().split('\n')[0] if stdout else "Unknown version"
+                available_paths.append({
+                    "path": path,
+                    "version": version_info
+                })
+        except FileNotFoundError:
+            continue
+    
+    return {
+        "ffmpeg_available": len(available_paths) > 0,
+        "available_paths": available_paths,
+        "checked_paths": ffmpeg_paths
+    }
+
+# FastAPI 应用导出（用于 Vercel ASGI）
+# app 变量已经在上面定义，Vercel 会自动识别
