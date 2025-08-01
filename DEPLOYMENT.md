@@ -1,84 +1,137 @@
-# 部署检查清单
+# Vercel 部署指南
 
-## 部署前必须完成的配置
+## 🚀 快速部署
 
-### 1. 更新域名配置
-- [ ] 在 `api/main.py` 中更新 `ALLOWED_ORIGINS` 列表，将 `"https://yourdomain.vercel.app"` 替换为你的实际域名
-- [ ] 如果有自定义域名，添加到 CORS 配置中
-
-### 2. 环境变量设置（可选）
-- [ ] 如需自定义文件大小限制，设置 `FILE_SIZE_LIMIT` 环境变量
-- [ ] 如需调整并发任务数，设置 `MAX_CONCURRENT_TASKS` 环境变量
-
-### 3. Vercel 配置验证
-- [ ] 确认 `vercel.json` 配置正确
-- [ ] 检查函数内存和超时时间设置
-- [ ] 验证安全头配置
-
-## 部署步骤
-
-### 1. 代码准备
+### 1. 推送最简化配置
 ```bash
-# 确保所有文件都在正确位置
 git add .
-git commit -m "优化生产环境配置"
+git commit -m "最简化 Vercel 部署配置"
 git push origin main
 ```
 
-### 2. Vercel 部署
+### 2. Vercel 部署步骤
 1. 访问 [vercel.com](https://vercel.com)
 2. 连接你的 GitHub 仓库
-3. 选择项目并点击部署
-4. 等待部署完成
+3. 选择 `autovideozip` 项目
+4. 保持默认设置，点击 Deploy
 
-### 3. 部署后验证
-- [ ] 访问部署的 URL，确认页面正常加载
-- [ ] 测试文件上传功能
-- [ ] 检查压缩功能是否正常工作
-- [ ] 验证错误处理是否正确显示
-- [ ] 访问 `/health` 端点检查服务状态
+## 📋 当前配置说明
 
-## 监控和维护
+### 文件结构
+```
+├── api/
+│   └── index.py          # 最简化的 FastAPI 应用
+├── index.html            # 部署测试页面
+├── requirements.txt      # 仅包含 fastapi 和 uvicorn
+└── vercel.json          # 最简化的 Vercel 配置
+```
 
-### 日志监控
-- 在 Vercel 控制台查看函数日志
-- 监控错误率和响应时间
-- 关注文件处理成功率
+### API 端点
+- `GET /api/` - 基础 API 测试
+- `GET /api/health` - 健康检查
+- `GET /api/test` - 部署测试端点
 
-### 性能监控
-- 监控并发任务数量
-- 检查临时文件清理情况
-- 观察内存使用情况
+## 🔍 部署验证
 
-### 定期维护
-- 定期检查日志中的错误模式
-- 根据使用情况调整资源配置
-- 更新依赖包到最新版本
+### 部署成功后访问：
+1. **主页面**: `https://your-app.vercel.app`
+2. **API 测试**: `https://your-app.vercel.app/api/`
+3. **健康检查**: `https://your-app.vercel.app/api/health`
 
-## 故障排除
+### 预期响应：
+```json
+// GET /api/
+{
+  "message": "Video Compression API is running",
+  "status": "healthy"
+}
 
-### 常见问题
-1. **FFmpeg 不可用**
-   - 检查 Vercel 的 Python 运行时是否支持 FFmpeg
-   - 考虑使用第三方 API 服务
+// GET /api/health
+{
+  "status": "healthy",
+  "service": "video-compression"
+}
+```
 
-2. **文件处理超时**
-   - 检查文件大小是否超过限制
-   - 优化压缩参数
-   - 考虑增加函数超时时间
+## 🛠️ 故障排除
 
-3. **CORS 错误**
-   - 确认域名配置正确
-   - 检查请求来源是否在允许列表中
+### 常见部署失败原因：
 
-4. **内存不足**
-   - 检查并发任务数设置
-   - 考虑增加函数内存限制
-   - 优化文件处理流程
+1. **Python 版本问题**
+   - Vercel 默认使用 Python 3.12
+   - 如需指定版本，创建 `runtime.txt`: `python-3.12`
 
-## 安全建议
+2. **依赖安装失败**
+   - 检查 `requirements.txt` 格式
+   - 确保所有依赖都兼容 Python 3.12
 
-- 定期更新依赖包
-- 监控异常访问模式
-- 考虑添加访问频率限制
-- 定期备份重要配置文件
+3. **文件路径错误**
+   - API 文件必须在 `api/` 目录下
+   - 入口文件应命名为 `index.py`
+
+4. **ASGI 应用配置**
+   - 确保 FastAPI 应用变量名为 `app`
+   - 不需要额外的 handler 或 export
+
+### 调试步骤：
+
+1. **查看部署日志**
+   - 在 Vercel 控制台查看构建和部署日志
+   - 查找具体错误信息
+
+2. **本地测试**
+   ```bash
+   cd api
+   python -m uvicorn index:app --reload
+   ```
+
+3. **逐步添加功能**
+   - 确保基础部署成功后
+   - 再逐步添加复杂功能
+
+## 📈 下一步计划
+
+### 基础部署成功后：
+
+1. **恢复视频压缩功能**
+   - 添加文件上传处理
+   - 集成 FFmpeg 或第三方 API
+
+2. **添加前端功能**
+   - 文件拖拽上传
+   - 进度显示
+   - 结果下载
+
+3. **生产环境优化**
+   - 限制 CORS 来源
+   - 添加安全中间件
+   - 性能监控
+
+## 🔧 备用方案
+
+### 如果 Vercel 持续失败：
+
+1. **使用 Railway**
+   ```bash
+   railway login
+   railway init
+   railway up
+   ```
+
+2. **使用 Render**
+   - 连接 GitHub 仓库
+   - 选择 Web Service
+   - 构建命令: `pip install -r requirements.txt`
+   - 启动命令: `uvicorn api.index:app --host 0.0.0.0 --port $PORT`
+
+3. **使用 Heroku**
+   - 需要 `Procfile`: `web: uvicorn api.index:app --host 0.0.0.0 --port $PORT`
+
+## 📞 获取帮助
+
+如果部署仍然失败，请提供：
+1. Vercel 控制台的错误日志
+2. 构建失败的具体信息
+3. 项目的 GitHub 仓库链接
+
+我们将根据具体错误信息提供针对性的解决方案。

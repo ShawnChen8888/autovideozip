@@ -2,553 +2,147 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>在线视频音频压缩工具 - 高效免费</title>
-    <meta name="description" content="高效的在线视频音频压缩工具，支持多种格式，无需下载，安全快速">
-    <meta name="keywords" content="视频压缩,音频压缩,在线工具,免费">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频压缩工具 - 部署测试</title>
     <style>
-        :root {
-            --apple-green: #30D158;
-            --apple-green-dark: #28b34a;
-            --apple-bg: #f5f5f7;
-            --apple-card: #fff;
-            --apple-shadow: 0 4px 24px #30d15822;
-            --apple-radius: 18px;
-            --apple-font: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-        }
         body {
-            font-family: var(--apple-font);
-            background: var(--apple-bg);
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f5f5f7;
         }
         .container {
-            background: var(--apple-card);
-            max-width: 600px;
-            width: 100%;
-            margin: 20px auto;
-            padding: 32px 24px;
-            border-radius: var(--apple-radius);
-            box-shadow: var(--apple-shadow);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h2 {
-            text-align: center;
-            font-weight: 700;
-            font-size: 1.8rem;
-            margin-bottom: 24px;
-            color: #222;
-            letter-spacing: 0.5px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #666;
-            font-size: 1rem;
-            margin-bottom: 32px;
-            line-height: 1.4;
-        }
-        .drop-area {
-            width: 100%;
-            border: 2px dashed var(--apple-green);
-            border-radius: 14px;
-            background: #eafff2;
-            color: var(--apple-green-dark);
-            text-align: center;
-            padding: 32px 0 24px 0;
-            margin-bottom: 18px;
-            font-size: 1.1rem;
-            transition: background 0.2s, border 0.2s;
-            cursor: pointer;
-        }
-        .drop-area.dragover {
-            background: #d2f8e3;
-            border-color: var(--apple-green-dark);
-        }
-        input[type=file] {
-            display: none;
-        }
-        .file-list {
-            width: 100%;
-            margin-top: 10px;
-        }
-        .file-card {
-            background: #f8fff9;
+            background: white;
+            padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 1px 6px #30d15811;
-            padding: 18px 16px 12px 16px;
-            margin-bottom: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
         }
-        .file-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 1rem;
-        }
-        .file-name {
-            font-weight: 600;
-            color: #222;
-            word-break: break-all;
-            flex: 1;
-        }
-        .file-size {
-            color: #888;
-            font-size: 0.98em;
-            margin-left: 8px;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0fbe7;
-            border-radius: 6px;
-            overflow: hidden;
-            margin: 6px 0 2px 0;
-        }
-        .progress-inner {
-            height: 100%;
-            background: linear-gradient(90deg, var(--apple-green), var(--apple-green-dark));
-            border-radius: 6px;
-            transition: width 0.2s;
+        h1 {
+            color: #1d1d1f;
+            text-align: center;
+            margin-bottom: 30px;
         }
         .status {
-            font-size: 0.98em;
-            color: var(--apple-green-dark);
-            margin-right: 8px;
-        }
-        .error {
-            color: #d32f2f;
-            font-size: 0.98em;
-            margin-top: 4px;
-            background: #ffebee;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border-left: 3px solid #d32f2f;
-        }
-        .success {
-            color: #2e7d32;
-            background: #e8f5e8;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border-left: 3px solid #2e7d32;
-            margin-top: 4px;
-        }
-        .download-link {
-            color: var(--apple-green);
-            text-decoration: none;
-            font-weight: 600;
-            margin-right: 12px;
-        }
-        .download-link:hover {
-            text-decoration: underline;
-        }
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 8px;
-        }
-        .compression-ratio {
-            color: var(--apple-green-dark);
-            font-weight: 600;
-        }
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        .loading-content {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
             text-align: center;
         }
-        @media (max-width: 600px) {
-            .container { 
-                padding: 20px 16px;
-                margin: 10px;
-            }
-            h2 { font-size: 1.5rem; }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+        button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056cc;
+        }
+        pre {
+            background: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>在线视频音频压缩工具</h2>
-    <p class="subtitle">高效压缩、安全私密、支持多种格式<br>最大支持 50MB 文件</p>
-    <div style="width:100%;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:1rem;cursor:pointer;">
-            <input type="checkbox" id="autoSaveToggle" style="accent-color:#30D158;"> 自动保存到本地
-        </label>
-        <button id="chooseDirBtn" style="display:none;padding:6px 14px;font-size:0.98rem;background:#eafff2;color:#30D158;border:1.5px solid #30D158;border-radius:8px;cursor:pointer;">选择保存目录</button>
-        <span id="dirStatus" style="font-size:0.95em;color:#30D158;"></span>
-    </div>
-    <div class="drop-area" id="dropArea">
-        <div style="font-size: 1.2rem; margin-bottom: 8px;">📹 拖拽或点击选择文件</div>
-        <div style="font-size: 0.9rem; color: #666;">支持: MP4, MOV, AVI, MKV, WebM, MP3, AAC, WAV 等</div>
-    </div>
-    <input type="file" id="fileInput" accept="video/*,audio/*" multiple>
-    <div class="file-list" id="fileList"></div>
-</div>
-
-<!-- 加载遮罩 -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-content">
-        <div style="margin-bottom: 16px;">🔄 处理中...</div>
-        <div style="color: #666;">请耐心等待，大文件可能需要较长时间</div>
-    </div>
-</div>
-
-<script>
-const dropArea = document.getElementById('dropArea');
-const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
-const autoSaveToggle = document.getElementById('autoSaveToggle');
-const chooseDirBtn = document.getElementById('chooseDirBtn');
-const dirStatus = document.getElementById('dirStatus');
-const loadingOverlay = document.getElementById('loadingOverlay');
-let autoSave = false;
-let saveDirHandle = null;
-let totalProcessed = 0;
-let totalSaved = 0;
-
-// 支持的文件类型
-const SUPPORTED_TYPES = {
-    video: ['.mp4', '.mov', '.avi', '.mkv', '.webm'],
-    audio: ['.mp3', '.aac', '.wav', '.flac', '.ogg', '.m4a']
-};
-
-function formatSize(size) {
-    if (size < 1024) return size + ' B';
-    if (size < 1024*1024) return (size/1024).toFixed(1) + ' KB';
-    if (size < 1024*1024*1024) return (size/1024/1024).toFixed(1) + ' MB';
-    return (size/1024/1024/1024).toFixed(1) + ' GB';
-}
-
-function uuidv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
-function validateFile(file) {
-    // 检查文件大小
-    if (file.size > 50 * 1024 * 1024) {
-        return { valid: false, error: '文件过大，最大支持 50MB' };
-    }
-    
-    // 检查文件类型
-    const ext = '.' + file.name.split('.').pop().toLowerCase();
-    const isVideo = SUPPORTED_TYPES.video.includes(ext);
-    const isAudio = SUPPORTED_TYPES.audio.includes(ext);
-    
-    if (!isVideo && !isAudio) {
-        return { valid: false, error: `不支持的文件类型: ${ext}` };
-    }
-    
-    return { valid: true };
-}
-
-let tasks = [];
-
-function renderList() {
-    fileList.innerHTML = '';
-    tasks.forEach((task, idx) => {
-        const card = document.createElement('div');
-        card.className = 'file-card';
+    <div class="container">
+        <h1>🎬 视频压缩工具</h1>
         
-        // 计算压缩比例
-        let compressionRatio = '';
-        if (task.compressedSize && task.file.size) {
-            const ratio = ((task.file.size - task.compressedSize) / task.file.size * 100).toFixed(1);
-            compressionRatio = `<span class="compression-ratio">压缩率: ${ratio}%</span>`;
-        }
-        
-        card.innerHTML = `
-            <div class="file-row">
-                <span class="file-name">${task.file.name}</span>
-                <span class="file-size">${formatSize(task.file.size)}</span>
-            </div>
-            <div class="progress-bar"><div class="progress-inner" style="width:${task.progress}%"></div></div>
-            <div class="file-row">
-                <span class="status">${task.status}</span>
-                <span style="color:#30D158;font-weight:600;">${Math.round(task.progress)}%</span>
-            </div>
-            ${task.downloads ? `<div class="file-row">${task.downloads}</div>` : ''}
-            ${task.error ? `<div class="error">❌ ${task.error}</div>` : ''}
-            ${task.progress === 100 && !task.error ? `<div class="success">✅ 处理完成</div>` : ''}
-            <div class="stats">
-                <span>原始: ${formatSize(task.file.size)}</span>
-                <span>压缩后: ${task.compressedSize ? formatSize(task.compressedSize) : '--'}</span>
-                ${compressionRatio}
-            </div>
-        `;
-        fileList.appendChild(card);
-    });
-}
+        <div class="info">
+            <h3>部署状态检查</h3>
+            <p>点击下面的按钮测试 API 连接</p>
+        </div>
 
-async function autoSaveFileToDir(url, filename) {
-    if (!saveDirHandle) return false;
-    try {
-        const fileHandle = await saveDirHandle.getFileHandle(filename, { create: true });
-        const writable = await fileHandle.createWritable();
-        const resp = await fetch(url);
-        const blob = await resp.blob();
-        await writable.write(blob);
-        await writable.close();
-        console.log('自动保存成功:', filename);
-        showToast('已自动保存到本地: ' + filename, true);
-        return true;
-    } catch (e) {
-        console.error('自动保存失败:', e);
-        showToast('自动保存失败: ' + filename, false);
-        return false;
-    }
-}
+        <div style="text-align: center;">
+            <button onclick="testAPI()">测试 API 连接</button>
+            <button onclick="testHealth()">检查服务健康状态</button>
+        </div>
 
-function showToast(msg, success) {
-    let toast = document.getElementById('toastMsg');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toastMsg';
-        toast.style.position = 'fixed';
-        toast.style.bottom = '40px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = success ? '#30D158' : '#d32f2f';
-        toast.style.color = '#fff';
-        toast.style.padding = '12px 28px';
-        toast.style.borderRadius = '10px';
-        toast.style.fontSize = '1.08rem';
-        toast.style.zIndex = 9999;
-        document.body.appendChild(toast);
-    }
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 2600);
-}
+        <div id="results"></div>
 
-function triggerDownload(url, filename) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => document.body.removeChild(a), 100);
-}
+        <div class="info">
+            <h3>📝 说明</h3>
+            <p>这是视频压缩工具的部署测试页面。</p>
+            <p>当前版本仅包含基础 API 测试功能。</p>
+            <p>如果 API 测试成功，说明 Vercel 部署正常。</p>
+        </div>
+    </div>
 
-function uploadFile(task) {
-    // 文件验证
-    const validation = validateFile(task.file);
-    if (!validation.valid) {
-        task.error = validation.error;
-        task.status = '失败';
-        renderList();
-        return;
-    }
-    
-    const xhr = new XMLHttpRequest();
-    const formData = new FormData();
-    const task_id = uuidv4();
-    task.task_id = task_id;
-    formData.append('file', task.file);
-    task.status = '上传中...';
-    task.progress = 0;
-    renderList();
-    
-    xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-            task.progress = Math.round((e.loaded / e.total) * 50); // 上传占50%
-            renderList();
-        }
-    };
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                task.progress = 100;
-                task.status = '处理完成';
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    let downloads = '';
-                    if (data.video) downloads += `<a class='download-link' href='${data.video}' download>📥 下载视频</a>`;
-                    if (data.audio) downloads += `<a class='download-link' href='${data.audio}' download>📥 下载音频</a>`;
-                    task.downloads = downloads;
-                    task.compressedSize = data.size || null;
-                    
-                    // 更新统计信息
-                    totalProcessed++;
-                    if (task.compressedSize < task.file.size) {
-                        totalSaved += (task.file.size - task.compressedSize);
-                    }
-                    
-                    // 自动保存逻辑
-                    if (autoSave) {
-                        if (data.video) {
-                            const fname = task.file.name.replace(/\.[^.]+$/, '_compressed.mp4');
-                            if (hasFSAccess && saveDirHandle) {
-                                autoSaveFileToDir(data.video, fname);
-                            } else {
-                                triggerDownload(data.video, fname);
-                            }
-                        }
-                        if (data.audio) {
-                            const fname = task.file.name.replace(/\.[^.]+$/, '_compressed.mp3');
-                            if (hasFSAccess && saveDirHandle) {
-                                autoSaveFileToDir(data.audio, fname);
-                            } else {
-                                triggerDownload(data.audio, fname);
-                            }
-                        }
-                    }
-                } catch (e) {
-                    task.error = '返回数据解析失败';
-                    console.error('解析响应数据失败:', e);
-                }
-            } else {
-                task.status = '失败';
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    if (xhr.status === 429) {
-                        task.error = '服务器繁忙，请稍后重试';
-                    } else if (xhr.status === 413) {
-                        task.error = '文件过大，最大支持 50MB';
-                    } else if (xhr.status === 408) {
-                        task.error = '处理超时，文件可能过大';
-                    } else {
-                        task.error = data.detail || '处理失败';
-                    }
-                } catch (e) {
-                    task.error = xhr.statusText || '网络错误';
-                }
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="info">正在测试 API...</div>';
+            
+            try {
+                const response = await fetch('/api/');
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <div class="success">
+                        <h3>✅ API 连接成功</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        <h3>❌ API 连接失败</h3>
+                        <p>错误信息: ${error.message}</p>
+                    </div>
+                `;
             }
-            renderList();
-            if (task._progressTimer) clearInterval(task._progressTimer);
         }
-    };
-    
-    xhr.onerror = function() {
-        task.status = '失败';
-        task.error = '网络连接错误';
-        renderList();
-        if (task._progressTimer) clearInterval(task._progressTimer);
-    };
-    
-    xhr.open('POST', '/upload?task_id=' + encodeURIComponent(task_id));
-    xhr.send(formData);
-    
-    // 处理阶段轮询进度
-    task.status = '处理中...';
-    let lastProgress = 50;
-    task._progressTimer = setInterval(() => {
-        fetch('/progress?task_id=' + encodeURIComponent(task_id))
-            .then(r => r.json())
-            .then(data => {
-                if (typeof data.progress === 'number') {
-                    // 上传占50%，处理占50%
-                    let backend = 50 + Math.round(data.progress/2);
-                    if (backend > lastProgress) {
-                        lastProgress = backend;
-                    } else {
-                        // 平滑推进
-                        lastProgress = Math.min(lastProgress + 1, 99);
-                    }
-                    if (data.progress >= 100) {
-                        lastProgress = 100;
-                        clearInterval(task._progressTimer);
-                    }
-                    task.progress = lastProgress;
-                    renderList();
-                }
-            })
-            .catch(e => {
-                console.error('获取进度失败:', e);
-            });
-    }, 600);
-    
-    renderList();
-}
 
-dropArea.onclick = () => fileInput.click();
-dropArea.ondragover = e => { e.preventDefault(); dropArea.classList.add('dragover'); };
-dropArea.ondragleave = e => { e.preventDefault(); dropArea.classList.remove('dragover'); };
-dropArea.ondrop = e => {
-    e.preventDefault();
-    dropArea.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-};
-fileInput.onchange = () => handleFiles(fileInput.files);
+        async function testHealth() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="info">正在检查健康状态...</div>';
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <div class="success">
+                        <h3>✅ 服务健康检查通过</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        <h3>❌ 健康检查失败</h3>
+                        <p>错误信息: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
 
-function handleFiles(fileListObj) {
-    const files = Array.from(fileListObj);
-    
-    // 检查文件数量
-    if (files.length > 5) {
-        showToast('一次最多只能处理5个文件', false);
-        return;
-    }
-    
-    files.forEach(file => {
-        const task = { 
-            file, 
-            progress: 0, 
-            status: '等待上传', 
-            error: '', 
-            downloads: '', 
-            compressedSize: null 
+        // 页面加载时自动测试
+        window.onload = function() {
+            testAPI();
         };
-        tasks.push(task);
-        renderList();
-        uploadFile(task);
-    });
-}
-
-// 检测 File System Access API 支持
-const hasFSAccess = 'showDirectoryPicker' in window;
-if (hasFSAccess) {
-    chooseDirBtn.style.display = '';
-    chooseDirBtn.onclick = async () => {
-        try {
-            saveDirHandle = await window.showDirectoryPicker();
-            dirStatus.textContent = '已选择目录';
-        } catch (e) {
-            dirStatus.textContent = '未选择目录';
-        }
-    };
-}
-
-autoSaveToggle.onchange = function() {
-    autoSave = autoSaveToggle.checked;
-    if (autoSave && hasFSAccess && !saveDirHandle) {
-        chooseDirBtn.click();
-    }
-};
-
-// 监听页面关闭，清理资源
-window.addEventListener('beforeunload', () => {
-    tasks.forEach(task => {
-        if (task._progressTimer) {
-            clearInterval(task._progressTimer);
-        }
-    });
-});
-</script>
+    </script>
 </body>
 </html>
