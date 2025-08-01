@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>视频/音频极致压缩工具</title>
+    <title>在线视频音频压缩工具 - 高效免费</title>
+    <meta name="description" content="高效的在线视频音频压缩工具，支持多种格式，无需下载，安全快速">
+    <meta name="keywords" content="视频压缩,音频压缩,在线工具,免费">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
             --apple-green: #30D158;
@@ -25,10 +28,10 @@
         }
         .container {
             background: var(--apple-card);
-            max-width: 520px;
+            max-width: 600px;
             width: 100%;
-            margin: 40px auto;
-            padding: 40px 32px 32px 32px;
+            margin: 20px auto;
+            padding: 32px 24px;
             border-radius: var(--apple-radius);
             box-shadow: var(--apple-shadow);
             display: flex;
@@ -38,10 +41,17 @@
         h2 {
             text-align: center;
             font-weight: 700;
-            font-size: 1.6rem;
-            margin-bottom: 32px;
+            font-size: 1.8rem;
+            margin-bottom: 24px;
             color: #222;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 32px;
+            line-height: 1.4;
         }
         .drop-area {
             width: 100%;
@@ -117,6 +127,18 @@
             color: #d32f2f;
             font-size: 0.98em;
             margin-top: 4px;
+            background: #ffebee;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid #d32f2f;
+        }
+        .success {
+            color: #2e7d32;
+            background: #e8f5e8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid #2e7d32;
+            margin-top: 4px;
         }
         .download-link {
             color: var(--apple-green);
@@ -127,14 +149,49 @@
         .download-link:hover {
             text-decoration: underline;
         }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 8px;
+        }
+        .compression-ratio {
+            color: var(--apple-green-dark);
+            font-weight: 600;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
         @media (max-width: 600px) {
-            .container { padding: 18px 2vw 12px 2vw; }
+            .container { 
+                padding: 20px 16px;
+                margin: 10px;
+            }
+            h2 { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>视频/音频极致压缩工具</h2>
+    <h2>在线视频音频压缩工具</h2>
+    <p class="subtitle">高效压缩、安全私密、支持多种格式<br>最大支持 50MB 文件</p>
     <div style="width:100%;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:1rem;cursor:pointer;">
             <input type="checkbox" id="autoSaveToggle" style="accent-color:#30D158;"> 自动保存到本地
@@ -142,10 +199,22 @@
         <button id="chooseDirBtn" style="display:none;padding:6px 14px;font-size:0.98rem;background:#eafff2;color:#30D158;border:1.5px solid #30D158;border-radius:8px;cursor:pointer;">选择保存目录</button>
         <span id="dirStatus" style="font-size:0.95em;color:#30D158;"></span>
     </div>
-    <div class="drop-area" id="dropArea">拖拽或点击选择多个视频/音频文件</div>
+    <div class="drop-area" id="dropArea">
+        <div style="font-size: 1.2rem; margin-bottom: 8px;">📹 拖拽或点击选择文件</div>
+        <div style="font-size: 0.9rem; color: #666;">支持: MP4, MOV, AVI, MKV, WebM, MP3, AAC, WAV 等</div>
+    </div>
     <input type="file" id="fileInput" accept="video/*,audio/*" multiple>
     <div class="file-list" id="fileList"></div>
 </div>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div style="margin-bottom: 16px;">🔄 处理中...</div>
+        <div style="color: #666;">请耐心等待，大文件可能需要较长时间</div>
+    </div>
+</div>
+
 <script>
 const dropArea = document.getElementById('dropArea');
 const fileInput = document.getElementById('fileInput');
@@ -153,8 +222,17 @@ const fileList = document.getElementById('fileList');
 const autoSaveToggle = document.getElementById('autoSaveToggle');
 const chooseDirBtn = document.getElementById('chooseDirBtn');
 const dirStatus = document.getElementById('dirStatus');
+const loadingOverlay = document.getElementById('loadingOverlay');
 let autoSave = false;
 let saveDirHandle = null;
+let totalProcessed = 0;
+let totalSaved = 0;
+
+// 支持的文件类型
+const SUPPORTED_TYPES = {
+    video: ['.mp4', '.mov', '.avi', '.mkv', '.webm'],
+    audio: ['.mp3', '.aac', '.wav', '.flac', '.ogg', '.m4a']
+};
 
 function formatSize(size) {
     if (size < 1024) return size + ' B';
@@ -170,6 +248,24 @@ function uuidv4() {
     });
 }
 
+function validateFile(file) {
+    // 检查文件大小
+    if (file.size > 50 * 1024 * 1024) {
+        return { valid: false, error: '文件过大，最大支持 50MB' };
+    }
+    
+    // 检查文件类型
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const isVideo = SUPPORTED_TYPES.video.includes(ext);
+    const isAudio = SUPPORTED_TYPES.audio.includes(ext);
+    
+    if (!isVideo && !isAudio) {
+        return { valid: false, error: `不支持的文件类型: ${ext}` };
+    }
+    
+    return { valid: true };
+}
+
 let tasks = [];
 
 function renderList() {
@@ -177,6 +273,14 @@ function renderList() {
     tasks.forEach((task, idx) => {
         const card = document.createElement('div');
         card.className = 'file-card';
+        
+        // 计算压缩比例
+        let compressionRatio = '';
+        if (task.compressedSize && task.file.size) {
+            const ratio = ((task.file.size - task.compressedSize) / task.file.size * 100).toFixed(1);
+            compressionRatio = `<span class="compression-ratio">压缩率: ${ratio}%</span>`;
+        }
+        
         card.innerHTML = `
             <div class="file-row">
                 <span class="file-name">${task.file.name}</span>
@@ -185,15 +289,15 @@ function renderList() {
             <div class="progress-bar"><div class="progress-inner" style="width:${task.progress}%"></div></div>
             <div class="file-row">
                 <span class="status">${task.status}</span>
-                ${task.downloads ? task.downloads : ''}
-            </div>
-            <div class="file-row">
                 <span style="color:#30D158;font-weight:600;">${Math.round(task.progress)}%</span>
             </div>
-            ${task.error ? `<div class="error">${task.error}</div>` : ''}
-            <div class="file-row">
-                <span>压缩前: ${formatSize(task.file.size)}</span>
+            ${task.downloads ? `<div class="file-row">${task.downloads}</div>` : ''}
+            ${task.error ? `<div class="error">❌ ${task.error}</div>` : ''}
+            ${task.progress === 100 && !task.error ? `<div class="success">✅ 处理完成</div>` : ''}
+            <div class="stats">
+                <span>原始: ${formatSize(task.file.size)}</span>
                 <span>压缩后: ${task.compressedSize ? formatSize(task.compressedSize) : '--'}</span>
+                ${compressionRatio}
             </div>
         `;
         fileList.appendChild(card);
@@ -218,6 +322,7 @@ async function autoSaveFileToDir(url, filename) {
         return false;
     }
 }
+
 function showToast(msg, success) {
     let toast = document.getElementById('toastMsg');
     if (!toast) {
@@ -239,6 +344,7 @@ function showToast(msg, success) {
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 2600);
 }
+
 function triggerDownload(url, filename) {
     const a = document.createElement('a');
     a.href = url;
@@ -249,6 +355,15 @@ function triggerDownload(url, filename) {
 }
 
 function uploadFile(task) {
+    // 文件验证
+    const validation = validateFile(task.file);
+    if (!validation.valid) {
+        task.error = validation.error;
+        task.status = '失败';
+        renderList();
+        return;
+    }
+    
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
     const task_id = uuidv4();
@@ -257,12 +372,14 @@ function uploadFile(task) {
     task.status = '上传中...';
     task.progress = 0;
     renderList();
+    
     xhr.upload.onprogress = function(e) {
         if (e.lengthComputable) {
             task.progress = Math.round((e.loaded / e.total) * 50); // 上传占50%
             renderList();
         }
     };
+    
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
@@ -271,10 +388,17 @@ function uploadFile(task) {
                 try {
                     const data = JSON.parse(xhr.responseText);
                     let downloads = '';
-                    if (data.video) downloads += `<a class='download-link' href='${data.video}' download>下载视频</a>`;
-                    if (data.audio) downloads += `<a class='download-link' href='${data.audio}' download>下载音频</a>`;
+                    if (data.video) downloads += `<a class='download-link' href='${data.video}' download>📥 下载视频</a>`;
+                    if (data.audio) downloads += `<a class='download-link' href='${data.audio}' download>📥 下载音频</a>`;
                     task.downloads = downloads;
                     task.compressedSize = data.size || null;
+                    
+                    // 更新统计信息
+                    totalProcessed++;
+                    if (task.compressedSize < task.file.size) {
+                        totalSaved += (task.file.size - task.compressedSize);
+                    }
+                    
                     // 自动保存逻辑
                     if (autoSave) {
                         if (data.video) {
@@ -286,7 +410,7 @@ function uploadFile(task) {
                             }
                         }
                         if (data.audio) {
-                            const fname = task.file.name.replace(/\.[^.]+$/, '.aac');
+                            const fname = task.file.name.replace(/\.[^.]+$/, '_compressed.mp3');
                             if (hasFSAccess && saveDirHandle) {
                                 autoSaveFileToDir(data.audio, fname);
                             } else {
@@ -296,51 +420,69 @@ function uploadFile(task) {
                     }
                 } catch (e) {
                     task.error = '返回数据解析失败';
+                    console.error('解析响应数据失败:', e);
                 }
             } else {
                 task.status = '失败';
                 try {
                     const data = JSON.parse(xhr.responseText);
-                    task.error = data.detail || '上传失败';
+                    if (xhr.status === 429) {
+                        task.error = '服务器繁忙，请稍后重试';
+                    } else if (xhr.status === 413) {
+                        task.error = '文件过大，最大支持 50MB';
+                    } else if (xhr.status === 408) {
+                        task.error = '处理超时，文件可能过大';
+                    } else {
+                        task.error = data.detail || '处理失败';
+                    }
                 } catch (e) {
-                    task.error = xhr.statusText || '上传失败';
+                    task.error = xhr.statusText || '网络错误';
                 }
             }
             renderList();
             if (task._progressTimer) clearInterval(task._progressTimer);
         }
     };
+    
     xhr.onerror = function() {
         task.status = '失败';
-        task.error = '网络错误';
+        task.error = '网络连接错误';
         renderList();
         if (task._progressTimer) clearInterval(task._progressTimer);
     };
+    
     xhr.open('POST', '/upload?task_id=' + encodeURIComponent(task_id));
     xhr.send(formData);
-    // 处理阶段轮询进度+平滑推进
+    
+    // 处理阶段轮询进度
     task.status = '处理中...';
     let lastProgress = 50;
     task._progressTimer = setInterval(() => {
-        fetch('/progress?task_id=' + encodeURIComponent(task_id)).then(r => r.json()).then(data => {
-            if (typeof data.progress === 'number') {
-                // 上传占50%，处理占50%，平滑推进
-                let backend = 50 + Math.round(data.progress/2);
-                if (backend > lastProgress) {
-                    lastProgress = backend;
-                } else {
-                    // 如果后端没变，前端每次+1，最多到99
-                    lastProgress = Math.min(lastProgress + 1, 99);
+        fetch('/progress?task_id=' + encodeURIComponent(task_id))
+            .then(r => r.json())
+            .then(data => {
+                if (typeof data.progress === 'number') {
+                    // 上传占50%，处理占50%
+                    let backend = 50 + Math.round(data.progress/2);
+                    if (backend > lastProgress) {
+                        lastProgress = backend;
+                    } else {
+                        // 平滑推进
+                        lastProgress = Math.min(lastProgress + 1, 99);
+                    }
+                    if (data.progress >= 100) {
+                        lastProgress = 100;
+                        clearInterval(task._progressTimer);
+                    }
+                    task.progress = lastProgress;
+                    renderList();
                 }
-                if (data.progress >= 100) {
-                    lastProgress = 100;
-                    clearInterval(task._progressTimer);
-                }
-                task.progress = lastProgress;
-                renderList();
-            }
-        });
+            })
+            .catch(e => {
+                console.error('获取进度失败:', e);
+            });
     }, 600);
+    
     renderList();
 }
 
@@ -356,8 +498,22 @@ fileInput.onchange = () => handleFiles(fileInput.files);
 
 function handleFiles(fileListObj) {
     const files = Array.from(fileListObj);
+    
+    // 检查文件数量
+    if (files.length > 5) {
+        showToast('一次最多只能处理5个文件', false);
+        return;
+    }
+    
     files.forEach(file => {
-        const task = { file, progress: 0, status: '等待上传', error: '', downloads: '', compressedSize: null };
+        const task = { 
+            file, 
+            progress: 0, 
+            status: '等待上传', 
+            error: '', 
+            downloads: '', 
+            compressedSize: null 
+        };
         tasks.push(task);
         renderList();
         uploadFile(task);
@@ -377,12 +533,22 @@ if (hasFSAccess) {
         }
     };
 }
+
 autoSaveToggle.onchange = function() {
     autoSave = autoSaveToggle.checked;
     if (autoSave && hasFSAccess && !saveDirHandle) {
         chooseDirBtn.click();
     }
 };
+
+// 监听页面关闭，清理资源
+window.addEventListener('beforeunload', () => {
+    tasks.forEach(task => {
+        if (task._progressTimer) {
+            clearInterval(task._progressTimer);
+        }
+    });
+});
 </script>
 </body>
-</html> 
+</html>
